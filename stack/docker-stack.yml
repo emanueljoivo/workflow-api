@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: "workflows-admin"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "workflows-db"
+    networks:
+      - "net"
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+    deploy:
+      update_config:
+        order: start-first
+        delay: 2s
+        parallelism: 1
+  dba:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "emanueljoivo@gmail.com"
+      PGADMIN_DEFAULT_PASSWORD: "postgres"
+    networks:
+      - "net"
+    ports:
+      - "80:80"
+
+  api:
+    image: emanueljoivo/workflows:v0.0.1
+    env_file:
+      - "../.env"
+    networks:
+      - "net"
+    deploy:
+      replicas: 2
+      update_config:
+        order: stop-first
+        delay: 2s
+        parallelism: 2
+      restart_policy:
+        condition: on-failure
+        delay: 2s
+        max_attempts: 10
+        window: 120s
+    ports:
+      - "5000:5000"
+
+  messaging:
+    image: rabbitmq:3-management
+    networks:
+      - "net"
+    environment:
+      RABBITMQ_DEFAULT_USER: workflow-admin
+      RABBITMQ_DEFAULT_PASS: password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+volumes:
+  db: {}
+
+networks:
+  net:
+    driver: overlay

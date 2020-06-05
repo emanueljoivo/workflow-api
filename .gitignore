@@ -1,0 +1,6 @@
+go.sum
+.idea/
+accept/
+.env
+
+data/
